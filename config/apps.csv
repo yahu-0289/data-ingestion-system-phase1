@@ -1,0 +1,14 @@
+package_name,app_name,category,country,language,enabled
+com.spotify.music,Spotify,Music & Audio,us,en,TRUE
+com.netflix.mediaclient,Netflix,Entertainment,us,en,TRUE
+com.amazon.mShop.android.shopping,Amazon Shopping,Shopping,us,en,TRUE
+com.ebay.mobile,eBay,Shopping,us,en,TRUE
+com.duolingo,Duolingo,Education,us,en,TRUE
+com.coursera.android,Coursera,Education,us,en,TRUE
+com.myfitnesspal.android,MyFitnessPal,Health & Fitness,us,en,TRUE
+com.nike.ntc,Nike Training Club,Health & Fitness,us,en,TRUE
+com.ubercab,Uber,Travel & Local,us,en,TRUE
+com.airbnb.android,Airbnb,Travel & Local,us,en,TRUE
+com.discord,Discord,Social,us,en,TRUE
+com.reddit.frontpage,Reddit,Social,us,en,TRUE
+
