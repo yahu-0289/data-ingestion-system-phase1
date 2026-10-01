@@ -1,0 +1,8 @@
+google-play-scraper>=1.2.7,<2.0
+jupyterlab>=4.0
+matplotlib>=3.8
+nbformat>=5.10
+numpy>=1.26
+pandas>=2.2
+seaborn>=0.13
+
