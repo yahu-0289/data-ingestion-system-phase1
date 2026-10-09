@@ -14,7 +14,7 @@ import json
 import logging
 import time
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -27,7 +27,7 @@ RAW_DIR = ROOT / "data" / "raw"
 
 
 def utc_now() -> str:
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -74,6 +74,7 @@ def collect_one(app: pd.Series, count: int, run_id: str) -> int:
                 "country": str(app["country"]),
                 "language": str(app["language"]),
                 "source": "google_play_unofficial_google_play_scraper",
+                "requested_reviews_per_app": count,
             }
             stream.write(json.dumps(record, default=str, ensure_ascii=False) + "\n")
     logging.info("Wrote %s reviews to %s", len(result), target.relative_to(ROOT))
@@ -87,7 +88,7 @@ def main() -> None:
     if args.delay_seconds < 0:
         raise SystemExit("--delay-seconds cannot be negative")
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    run_id = args.run_id or datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "_" + uuid.uuid4().hex[:8]
+    run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "_" + uuid.uuid4().hex[:8]
     apps = enabled_apps(args.config)
     total = 0
     failures: list[str] = []
@@ -106,4 +107,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -15,10 +15,10 @@ CREATE TABLE IF NOT EXISTS collection_runs (
     run_id TEXT PRIMARY KEY,
     started_at TEXT NOT NULL,
     finished_at TEXT,
-    requested_reviews_per_app INTEGER NOT NULL CHECK (requested_reviews_per_app > 0),
+    requested_reviews_per_app INTEGER CHECK (requested_reviews_per_app > 0),
     source_name TEXT NOT NULL,
-    collector_version TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
+    collector_version TEXT,
+    status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('completed', 'partial', 'failed')),
     notes TEXT
 );
 
@@ -46,4 +46,3 @@ CREATE TABLE IF NOT EXISTS reviews (
 CREATE INDEX IF NOT EXISTS idx_reviews_app_id ON reviews(app_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating);
 CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(review_created_at);
-

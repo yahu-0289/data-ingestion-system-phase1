@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -19,7 +19,8 @@ QUALITY_DIR = ROOT / "data" / "quality"
 OUTPUT_COLUMNS = [
     "source_review_id", "package_name", "app_name", "category", "country", "language",
     "review_text", "rating", "review_created_at", "review_updated_at", "thumbs_up_count",
-    "app_version", "reply_text", "reply_created_at", "collected_at", "run_id", "raw_file",
+    "app_version", "reply_text", "reply_created_at", "collected_at", "run_id", "source_name",
+    "requested_reviews_per_app", "raw_file",
 ]
 
 
@@ -62,6 +63,8 @@ def load_raw(raw_dir: Path) -> tuple[pd.DataFrame, int]:
                         "reply_created_at": iso_or_null(source.get("repliedAt")),
                         "collected_at": ingestion.get("collected_at"),
                         "run_id": ingestion.get("run_id"),
+                        "source_name": ingestion.get("source"),
+                        "requested_reviews_per_app": ingestion.get("requested_reviews_per_app"),
                         "raw_file": path.name,
                     })
                 except (json.JSONDecodeError, TypeError, ValueError):
@@ -75,6 +78,9 @@ def clean(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         return frame, {"rows_read": 0, "rows_retained": 0, "invalid_rows": 0}
     frame["rating"] = pd.to_numeric(frame["rating"], errors="coerce").astype("Int64")
     frame["thumbs_up_count"] = pd.to_numeric(frame["thumbs_up_count"], errors="coerce").fillna(0).clip(lower=0).astype("Int64")
+    frame["requested_reviews_per_app"] = pd.to_numeric(
+        frame["requested_reviews_per_app"], errors="coerce"
+    ).where(lambda values: values.gt(0)).astype("Int64")
     missing_id = int(frame["source_review_id"].isna().sum())
     blank_text = int(frame["review_text"].eq("").sum())
     invalid_rating = int((~frame["rating"].between(1, 5)).sum())
@@ -88,7 +94,7 @@ def clean(frame: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     valid["review_text_length"] = valid["review_text"].str.len()
     valid = valid.sort_values(["category", "app_name", "review_created_at"], na_position="last")
     report = {
-        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "rows_read": initial,
         "rows_retained": len(valid),
         "invalid_or_missing_source_review_id": missing_id,
@@ -118,4 +124,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
