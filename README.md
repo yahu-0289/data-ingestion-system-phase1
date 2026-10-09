@@ -15,6 +15,7 @@ config/apps.csv              App-level collection configuration
 src/collect_reviews.py       Configurable acquisition into append-only JSONL
 src/clean_reviews.py         Validation, normalization, and deduplication
 src/schema.sql               SQLite relational schema: apps, runs, reviews
+docs/DATABASE_SCHEMA.md       Schema guide, field mappings, ERD, design choices
 src/load_database.py         Repeatable cleaned-data loader (upsert-safe)
 src/verify_database.py       Basic quality and integrity queries
 analysis/google_play_eda.ipynb  EDA: characteristics, coverage, quality, comparisons
@@ -50,7 +51,9 @@ The collector writes one JSONL file per app/run to `data/raw/`. It returns a non
 
 ## Schema rationale
 
-`apps` stores durable product metadata, `collection_runs` provides run-level lineage, and `reviews` stores normalized records linked to each app and initial collection run. This avoids repeating product fields in the database while retaining raw-file provenance. SQLite is appropriate for local prototyping; PostgreSQL can replace it later without changing the data model substantially.
+`apps` stores product metadata, `collection_runs` records source-collection batches, and `reviews` stores normalized records linked to each app and the Google Play collection run in which each review was first seen. This avoids repeating product fields in every review while retaining source-file and collection-run provenance. SQLite is appropriate for local prototyping; PostgreSQL can replace it later without changing the data model substantially.
+
+See [the database schema guide](docs/DATABASE_SCHEMA.md) for the implemented columns, keys, Google Play field mapping, ERD, and current provenance limitations.
 
 ## Quality rules
 
