@@ -6,6 +6,7 @@ __pycache__/
 
 # Generated data and local database (do not commit review text or user metadata).
 data/raw/*.jsonl
+data/raw/*_run_manifest.json
 data/processed/*.csv
 data/quality/*.json
 data/reviews.sqlite

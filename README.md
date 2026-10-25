@@ -13,11 +13,13 @@ The supplied `config/apps.csv` starts with 12 apps across seven categories and a
 ```text
 config/apps.csv              App-level collection configuration
 src/collect_reviews.py       Configurable acquisition into append-only JSONL
-src/clean_reviews.py         Validation, normalization, and deduplication
+src/clean_reviews.py         Validation, normalization, deduplication, and run manifests
 src/schema.sql               SQLite relational schema: apps, runs, reviews
 docs/DATABASE_SCHEMA.md       Schema guide, field mappings, ERD, design choices
+docs/REPEATED_INGESTION_TEST.md  Controlled lineage-test results
 src/load_database.py         Repeatable cleaned-data loader (upsert-safe)
 src/verify_database.py       Basic quality and integrity queries
+tests/test_repeated_ingestion.py  Controlled repeated-ingestion lineage test
 analysis/google_play_eda.ipynb  EDA: characteristics, coverage, quality, comparisons
 findings/EDA_FINDINGS_TEMPLATE.md  Findings report structure
 ```
@@ -47,13 +49,35 @@ python src/verify_database.py
 jupyter lab analysis/google_play_eda.ipynb
 ```
 
-The collector writes one JSONL file per app/run to `data/raw/`. It returns a non-zero exit code if an app fails, but retains successful app outputs so the failure can be investigated without losing work. Re-running cleaning is safe; database loading uses `(app_id, source_review_id)` as its unique key and upserts changed fields.
+The collector writes one JSONL file per app/run and one independent run manifest to `data/raw/`. The manifest is written even if an app returns zero reviews or part of the run fails, so collection attempts are not lost after review-level deduplication. It returns a non-zero exit code if an app fails, but retains successful app outputs and the run manifest for investigation. Re-running cleaning is safe; database loading uses `(app_id, source_review_id)` as its unique key, upserts changed review fields, and preserves each review's original `first_collected_run_id`.
+
+## Collection-run lineage check
+
+Each collection attempt is represented by an immutable `*_run_manifest.json`,
+separate from the review JSONL output. `clean_reviews.py` produces both
+`reviews_clean.csv` and `collection_runs_clean.csv`; the database loader loads
+the latter first. This means all-zero, duplicate-only, and partial runs remain
+queryable even when no new review is inserted.
+
+Run the controlled regression test after changing ingestion logic:
+
+```bash
+python -m unittest tests/test_repeated_ingestion.py -v
+```
+
+It verifies an initial load, a repeat collection, an overlapping/new-review
+run, and a zero-result run. Expected result: three retained reviews; A and B
+keep `run-001` as their first collection run, C receives `run-003`, and all
+four collection runs remain stored.
+
+The checked-in [controlled test record](docs/REPEATED_INGESTION_TEST.md)
+explains the inputs, assertions, and outcome without publishing review data.
 
 ## Schema rationale
 
 `apps` stores product metadata, `collection_runs` records source-collection batches, and `reviews` stores normalized records linked to each app and the Google Play collection run in which each review was first seen. This avoids repeating product fields in every review while retaining source-file and collection-run provenance. SQLite is appropriate for local prototyping; PostgreSQL can replace it later without changing the data model substantially.
 
-See [the database schema guide](docs/DATABASE_SCHEMA.md) for the implemented columns, keys, Google Play field mapping, ERD, and current provenance limitations.
+See [the database schema guide](docs/DATABASE_SCHEMA.md) for the implemented columns, keys, Google Play field mapping, ERD, and collection-run lineage rules.
 
 ## Quality rules
 
