@@ -17,6 +17,7 @@ src/clean_reviews.py         Validation, normalization, deduplication, and run m
 src/schema.sql               SQLite relational schema: apps, runs, reviews
 docs/DATABASE_SCHEMA.md       Schema guide, field mappings, ERD, design choices
 docs/REPEATED_INGESTION_TEST.md  Controlled lineage-test results
+docs/LIVE_REPEATED_INGESTION_TEST.md  Live end-to-end lineage-test results
 src/load_database.py         Repeatable cleaned-data loader (upsert-safe)
 src/verify_database.py       Basic quality and integrity queries
 tests/test_repeated_ingestion.py  Controlled repeated-ingestion lineage test
@@ -53,11 +54,7 @@ The collector writes one JSONL file per app/run and one independent run manifest
 
 ## Collection-run lineage check
 
-Each collection attempt is represented by an immutable `*_run_manifest.json`,
-separate from the review JSONL output. `clean_reviews.py` produces both
-`reviews_clean.csv` and `collection_runs_clean.csv`; the database loader loads
-the latter first. This means all-zero, duplicate-only, and partial runs remain
-queryable even when no new review is inserted.
+Each collection attempt is represented by an immutable `*_run_manifest.json`, separate from the review JSONL output. `clean_reviews.py` produces both `reviews_clean.csv` and `collection_runs_clean.csv`; the database loader loads the latter first. This means all-zero, duplicate-only, and partial runs remain queryable even when no new review is inserted.
 
 Run the controlled regression test after changing ingestion logic:
 
@@ -65,13 +62,9 @@ Run the controlled regression test after changing ingestion logic:
 python -m unittest tests/test_repeated_ingestion.py -v
 ```
 
-It verifies an initial load, a repeat collection, an overlapping/new-review
-run, and a zero-result run. Expected result: three retained reviews; A and B
-keep `run-001` as their first collection run, C receives `run-003`, and all
-four collection runs remain stored.
+It verifies an initial load, a repeat collection, an overlapping/new-review run, and a zero-result run. Expected result: three retained reviews; A and B keep `run-001` as their first collection run, C receives `run-003`, and all four collection runs remain stored.
 
-The checked-in [controlled test record](docs/REPEATED_INGESTION_TEST.md)
-explains the inputs, assertions, and outcome without publishing review data.
+The checked-in [controlled test record](docs/REPEATED_INGESTION_TEST.md) explains the inputs, assertions, and outcome without publishing review data. The [live repeated-ingestion record](docs/LIVE_REPEATED_INGESTION_TEST.md) documents the equivalent end-to-end Google Play validation using aggregate results only.
 
 ## Schema rationale
 
